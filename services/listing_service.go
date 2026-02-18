@@ -75,3 +75,8 @@ func (s *ListingService) normalize(raw models.RawListing) models.Listing {
 		Guests:    raw.Guests,
 	}
 }
+
+// GetAllListings retrieves all listings from database
+func (s *ListingService) GetAllListings() ([]models.Listing, error) {
+	return s.db.GetAllListings()
+}
