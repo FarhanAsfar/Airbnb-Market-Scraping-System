@@ -2,11 +2,13 @@ package airbnb
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/farhanasfar/airbnb-market-scraping-system/config"
+	"github.com/farhanasfar/airbnb-market-scraping-system/models"
 	"github.com/farhanasfar/airbnb-market-scraping-system/utils"
 )
 
@@ -67,4 +69,54 @@ func (scrape *Scraper) randomDelay() chromedp.Action {
 		time.Sleep(delay)
 		return nil
 	})
+}
+
+// ScrapeListings scrapes listings from Airbnb search results
+func (scrape *Scraper) ScrapeListings(ctx context.Context) ([]models.RawListing, error) {
+	// Create stealth browser context
+	browserCtx, cancel := scrape.createStealthContext(ctx)
+	defer cancel()
+
+	// Add timeout
+	browserCtx, cancel = context.WithTimeout(browserCtx, time.Duration(scrape.cfg.TimeoutSeconds)*time.Second)
+	defer cancel()
+
+	scrape.logger.Info("Starting Airbnb scraper...")
+	scrape.logger.Info("Target URL: %s", scrape.cfg.URL)
+
+	var listings []models.RawListing
+
+	err := chromedp.Run(browserCtx,
+		// Remove webdriver property
+		removeWebdriverProperty(),
+
+		// Navigate to search page
+		chromedp.Navigate(scrape.cfg.URL),
+
+		// Waiting for listing cards to appear
+		// Using data-testid attribute
+		chromedp.WaitVisible(`[data-testid="card-container"]`, chromedp.ByQuery),
+
+		// Add delay to let page fully render
+		scrape.randomDelay(),
+
+		// Scroll to trigger lazy loading
+		chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight / 2)`, nil),
+		scrape.randomDelay(),
+		chromedp.Evaluate(`window.scrollTo(0, 0)`, nil),
+
+		// Extract listings using JavaScript
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var err error
+			listings, err = scrape.extractListings(ctx)
+			return err
+		}),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("scraping failed: %w", err)
+	}
+
+	scrape.logger.Success("Scraped %d listings from page", len(listings))
+	return listings, nil
 }
