@@ -61,3 +61,17 @@ func (scrape *ListingService) NormalizeAndSave(rawListings []models.RawListing) 
 
 	return successCount, nil
 }
+
+// normalize converts RawListing to normalized Listing
+func (s *ListingService) normalize(raw models.RawListing) models.Listing {
+	return models.Listing{
+		Title:     raw.Title,
+		Price:     utils.NormalizePrice(raw.Price), // "$120" -> 120.0
+		Location:  raw.Location,
+		Rating:    utils.NormalizeRating(raw.Rating), // "4.95 (123)" -> 4.95
+		URL:       raw.URL,
+		Bedrooms:  raw.Bedrooms,
+		Bathrooms: raw.Bathrooms,
+		Guests:    raw.Guests,
+	}
+}
