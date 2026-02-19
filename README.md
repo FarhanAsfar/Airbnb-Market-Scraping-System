@@ -7,7 +7,6 @@ A web scraper for Airbnb listings built with Go and chromedp. Automatically scra
 ## Features
 
 - **Multi-Location Scraping**: Automatically discovers and scrapes locations from Airbnb homepage
-- **Smart Extraction**: Scrapes 10 properties per location (5 from page 1 + 5 from page 2)
 - **Detailed Property Data**: Title, price, location, rating, bedrooms, bathrooms, guest capacity, URL
 - **Concurrent Scraping**: Worker pool pattern for parallel detail page scraping
 - **Anti-Bot Detection**: 
@@ -15,7 +14,6 @@ A web scraper for Airbnb listings built with Go and chromedp. Automatically scra
   - User-agent rotation
   - Headless/headed browser modes
   - Rate limiting
-- **Robust Error Handling**: Automatic retries with exponential backoff
 - **Data Storage**: PostgreSQL with automatic deduplication
 - **CSV Export**: Export all data to spreadsheet format
 - **Analytics Dashboard**: Comprehensive statistics and insights
@@ -495,4 +493,5 @@ browserCtx, cancel = context.WithTimeout(browserCtx, 90*time.Second)
 ---
 
 Remember: Use responsibly and ethically. This tool is for educational and personal use only.
+
 
