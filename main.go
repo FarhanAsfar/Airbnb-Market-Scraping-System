@@ -73,6 +73,18 @@ func main() {
 		}
 	}
 
+	// Scrape detail pages with worker pool
+	detailResults := scraper.ScrapeDetailsWithWorkers(ctx, urls)
+
+	// Merge detail data with raw listings
+	for i := range rawListings {
+		if detail, ok := detailResults[rawListings[i].URL]; ok && detail.Error == nil {
+			rawListings[i].Bedrooms = detail.Bedrooms
+			rawListings[i].Bathrooms = detail.Bathrooms
+			rawListings[i].Guests = detail.Guests
+		}
+	}
+
 	// Normalize and save to database
 	logger.Info("\n=== SAVING TO DATABASE ===")
 	savedCount, err := listingService.NormalizeAndSave(rawListings)
