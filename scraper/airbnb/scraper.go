@@ -84,9 +84,11 @@ func (scrape *Scraper) ScrapeListings(ctx context.Context) ([]models.RawListing,
 
 	scrape.logger.Info("Starting Airbnb scraper...")
 	scrape.logger.Info("Target URL: %s", scrape.cfg.URL)
+	scrape.logger.Info("Max Pages: %d", scrape.cfg.MaxPages)
 
-	var listings []models.RawListing
+	var allListings []models.RawListing
 
+	//Navigate to first page
 	err := chromedp.Run(browserCtx,
 		// Remove webdriver property
 		removeWebdriverProperty(),
@@ -100,26 +102,61 @@ func (scrape *Scraper) ScrapeListings(ctx context.Context) ([]models.RawListing,
 
 		// Add delay to let page fully render
 		scrape.randomDelay(),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to load first page: %w", err)
+	}
+
+	//scrape multiple pages
+	for page := 1; page <= scrape.cfg.MaxPages; page++ {
+		scrape.logger.Info("Scraping page %d/%d...", page, scrape.cfg.MaxPages)
 
 		// Scroll to trigger lazy loading
-		chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight / 2)`, nil),
-		scrape.randomDelay(),
-		chromedp.Evaluate(`window.scrollTo(0, 0)`, nil),
+		chromedp.Run(browserCtx,
+			chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight / 2)`, nil),
+			scrape.randomDelay(),
+			chromedp.Evaluate(`window.scrollTo(0, 0)`, nil),
+		)
 
-		// Extract listings using JavaScript
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			var err error
-			listings, err = scrape.extractListings(ctx)
-			return err
-		}),
-	)
+		// Extract listings from current page
+		listings, err := scrape.extractListings(browserCtx)
+		if err != nil {
+			scrape.logger.Error("Failed to extract listings from page %d: %v", page, err)
+			continue
+		}
+
+		scrape.logger.Success("Scraped %d listings from page %d", len(listings), page)
+		allListings = append(allListings, listings...)
+
+		// If not the last page, click "Next" button
+		if page < scrape.cfg.MaxPages {
+			hasNext, err := scrape.goToNextPage(browserCtx)
+			if err != nil {
+				scrape.logger.Error("Failed to navigate to next page: %v", err)
+				break
+			}
+
+			if !hasNext {
+				scrape.logger.Info("No more pages available, stopping at page %d", page)
+				break
+			}
+
+			// Wait for new page to load
+			chromedp.Run(browserCtx,
+				chromedp.WaitVisible(`[data-testid="card-container"]`, chromedp.ByQuery),
+				scrape.randomDelay(),
+			)
+		}
+
+	}
 
 	if err != nil {
 		return nil, fmt.Errorf("scraping failed: %w", err)
 	}
 
-	scrape.logger.Success("Scraped %d listings from page", len(listings))
-	return listings, nil
+	scrape.logger.Success("Scraped %d listings from page", len(allListings))
+	return allListings, nil
 }
 
 // extractListings extracts listing data using JavaScript evaluation
