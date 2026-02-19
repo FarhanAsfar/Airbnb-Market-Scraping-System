@@ -116,14 +116,14 @@ func (s *AnalyticsService) PrintAnalytics(analytics *Analytics) {
 	s.logger.Info("TOTAL LISTINGS: %d\n", analytics.TotalListings)
 
 	// Price statistics
-	s.logger.Info("💰 PRICE STATISTICS:")
+	s.logger.Info("   PRICE STATISTICS:")
 	s.logger.Info("   Average Price:        $%.2f", analytics.AveragePrice)
 	s.logger.Info("   Maximum Price:        $%.2f", analytics.MaxPrice)
 	s.logger.Info("   Minimum Price:        $%.2f\n", analytics.MinPrice)
 
 	// Most expensive property
 	if analytics.MostExpensive != nil {
-		s.logger.Info(" MOST EXPENSIVE PROPERTY:")
+		s.logger.Info("   MOST EXPENSIVE PROPERTY:")
 		s.logger.Info("   Title:                %s", analytics.MostExpensive.Title)
 		s.logger.Info("   Price:                $%.2f per night", analytics.MostExpensive.Price)
 		s.logger.Info("   Location:             %s", analytics.MostExpensive.Location)
