@@ -107,45 +107,50 @@ func (s *AnalyticsService) getTopRated(listings []models.Listing, n int) []model
 
 // PrintAnalytics prints all analytics to console
 func (s *AnalyticsService) PrintAnalytics(analytics *Analytics) {
-	s.logger.Info("AIRBNB SCRAPING ANALYTICS REPORT \n")
+	// Header
+	s.logger.Info("\n" + strings.Repeat("=", 70))
+	s.logger.Info("              AIRBNB SCRAPING ANALYTICS REPORT")
+	s.logger.Info(strings.Repeat("=", 70) + "\n")
 
 	// Total listings
-	s.logger.Info(" TOTAL LISTINGS: %d", analytics.TotalListings)
+	s.logger.Info("TOTAL LISTINGS: %d\n", analytics.TotalListings)
 
 	// Price statistics
-	s.logger.Info("\n PRICE STATISTICS:")
-	s.logger.Info("   Average Price: $%.2f", analytics.AveragePrice)
-	s.logger.Info("   Maximum Price: $%.2f", analytics.MaxPrice)
-	s.logger.Info("   Minimum Price: $%.2f", analytics.MinPrice)
+	s.logger.Info("💰 PRICE STATISTICS:")
+	s.logger.Info("   Average Price:        $%.2f", analytics.AveragePrice)
+	s.logger.Info("   Maximum Price:        $%.2f", analytics.MaxPrice)
+	s.logger.Info("   Minimum Price:        $%.2f\n", analytics.MinPrice)
 
 	// Most expensive property
 	if analytics.MostExpensive != nil {
-		s.logger.Info("\n MOST EXPENSIVE PROPERTY:")
-		s.logger.Info("   Title: %s", analytics.MostExpensive.Title)
-		s.logger.Info("   Price: $%.2f per night", analytics.MostExpensive.Price)
-		s.logger.Info("   Location: %s", analytics.MostExpensive.Location)
-		s.logger.Info("   Rating: %.2f", analytics.MostExpensive.Rating)
-		s.logger.Info("   Bedrooms: %d | Bathrooms: %d | Guests: %d",
+		s.logger.Info(" MOST EXPENSIVE PROPERTY:")
+		s.logger.Info("   Title:                %s", analytics.MostExpensive.Title)
+		s.logger.Info("   Price:                $%.2f per night", analytics.MostExpensive.Price)
+		s.logger.Info("   Location:             %s", analytics.MostExpensive.Location)
+		s.logger.Info("   Rating:               %.2f ⭐", analytics.MostExpensive.Rating)
+		s.logger.Info("   Bedrooms: %d | Bathrooms: %d | Guests: %d\n",
 			analytics.MostExpensive.Bedrooms,
 			analytics.MostExpensive.Bathrooms,
 			analytics.MostExpensive.Guests)
 	}
 
 	// Listings per location
-	s.logger.Info("\n LISTINGS PER LOCATION:")
+	s.logger.Info(" LISTINGS PER LOCATION:")
 	for location, count := range analytics.ListingsPerLocation {
-		s.logger.Info("   %s: %d listings", location, count)
+		s.logger.Info("   %-35s %d properties", location, count)
 	}
+	s.logger.Info("")
 
 	// Top rated
-	s.logger.Info("\n TOP 5 HIGHEST RATED PROPERTIES:")
+	s.logger.Info("⭐ TOP 5 HIGHEST RATED PROPERTIES:")
 	for i, listing := range analytics.TopRated {
-		s.logger.Info("   %d. %s", i+1, listing.Title)
-		s.logger.Info("      Rating: %.2f | Price: $%.2f | Location: %s",
+		s.logger.Info("\n   %d. %s", i+1, listing.Title)
+		s.logger.Info("      Rating: %.2f ⭐ | Price: $%.2f | Location: %s",
 			listing.Rating, listing.Price, listing.Location)
 	}
 
-	s.logger.Info("%s", "\n"+strings.Repeat("═", 60)+"\n")
+	// Footer
+	s.logger.Info("\n" + strings.Repeat("=", 70) + "\n")
 }
 
 // PrintAveragePrice prints only average price
@@ -154,7 +159,7 @@ func (s *AnalyticsService) PrintAveragePrice() error {
 	if err != nil {
 		return err
 	}
-	s.logger.Info("Average Price: $%.2f", analytics.AveragePrice)
+	s.logger.Info("\nAverage Price: $%.2f\n", analytics.AveragePrice)
 	return nil
 }
 
@@ -165,13 +170,13 @@ func (s *AnalyticsService) PrintMaxPrice() error {
 		return err
 	}
 
-	s.logger.Info("\nMOST EXPENSIVE PROPERTY:")
+	s.logger.Info("\n MOST EXPENSIVE PROPERTY:")
 	if analytics.MostExpensive != nil {
-		s.logger.Info("   Title: %s", analytics.MostExpensive.Title)
-		s.logger.Info("   Price: $%.2f per night", analytics.MostExpensive.Price)
-		s.logger.Info("   Location: %s", analytics.MostExpensive.Location)
-		s.logger.Info("   Rating: %.2f", analytics.MostExpensive.Rating)
-		s.logger.Info("   URL: %s", analytics.MostExpensive.URL)
+		s.logger.Info("   Title:      %s", analytics.MostExpensive.Title)
+		s.logger.Info("   Price:      $%.2f per night", analytics.MostExpensive.Price)
+		s.logger.Info("   Location:   %s", analytics.MostExpensive.Location)
+		s.logger.Info("   Rating:     %.2f ⭐", analytics.MostExpensive.Rating)
+		s.logger.Info("   URL:        %s\n", analytics.MostExpensive.URL)
 	}
 	return nil
 }
@@ -183,15 +188,16 @@ func (s *AnalyticsService) PrintTopRated() error {
 		return err
 	}
 
-	s.logger.Info("\nTOP 5 HIGHEST RATED PROPERTIES:")
+	s.logger.Info("\n⭐ TOP 5 HIGHEST RATED PROPERTIES:")
 	for i, listing := range analytics.TopRated {
-		s.logger.Info("\n%d. %s", i+1, listing.Title)
-		s.logger.Info("   Rating: %.2f ⭐", listing.Rating)
-		s.logger.Info("   Price: $%.2f per night", listing.Price)
-		s.logger.Info("   Location: %s", listing.Location)
-		s.logger.Info("   Bedrooms: %d | Bathrooms: %d | Guests: %d",
+		s.logger.Info("\n   %d. %s", i+1, listing.Title)
+		s.logger.Info("      Rating:    %.2f ⭐", listing.Rating)
+		s.logger.Info("      Price:     $%.2f per night", listing.Price)
+		s.logger.Info("      Location:  %s", listing.Location)
+		s.logger.Info("      Bedrooms: %d | Bathrooms: %d | Guests: %d",
 			listing.Bedrooms, listing.Bathrooms, listing.Guests)
 	}
+	s.logger.Info("")
 	return nil
 }
 
@@ -202,9 +208,10 @@ func (s *AnalyticsService) PrintByLocation() error {
 		return err
 	}
 
-	s.logger.Info("\nLISTINGS BY LOCATION:")
+	s.logger.Info("\n LISTINGS BY LOCATION:")
 	for location, count := range analytics.ListingsPerLocation {
-		s.logger.Info("   %s: %d properties", location, count)
+		s.logger.Info("   %-35s %d properties", location, count)
 	}
+	s.logger.Info("")
 	return nil
 }
