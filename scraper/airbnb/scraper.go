@@ -154,6 +154,53 @@ func (scrape *Scraper) ScrapeListings(ctx context.Context) ([]models.RawListing,
 	return allListings, nil
 }
 
+// goToNextPage clicks the "Next" pagination button
+func (scrape *Scraper) goToNextPage(ctx context.Context) (bool, error) {
+	scrape.logger.Info("Looking for 'Next' button...")
+
+	// Check if next button exists and is clickable
+	var nextButtonExists bool
+	err := chromedp.Run(ctx,
+		chromedp.Evaluate(`
+			(() => {
+				// Try multiple selectors for the next button
+				const nextButton = document.querySelector('a[aria-label="Next"]') ||
+				                   document.querySelector('a[aria-label*="next"]') ||
+				                   document.querySelector('nav a:last-child');
+				return nextButton && !nextButton.getAttribute('aria-disabled');
+			})()
+		`, &nextButtonExists),
+	)
+
+	if err != nil {
+		return false, fmt.Errorf("failed to check for next button: %w", err)
+	}
+
+	if !nextButtonExists {
+		return false, nil
+	}
+
+	// Click the next button
+	err = chromedp.Run(ctx,
+		chromedp.Click(`a[aria-label="Next"]`, chromedp.ByQuery),
+		scrape.randomDelay(),
+	)
+
+	if err != nil {
+		// Try alternative selector
+		err = chromedp.Run(ctx,
+			chromedp.Click(`nav a:last-child`, chromedp.ByQuery),
+			scrape.randomDelay(),
+		)
+		if err != nil {
+			return false, fmt.Errorf("failed to click next button: %w", err)
+		}
+	}
+
+	scrape.logger.Success("Navigated to next page")
+	return true, nil
+}
+
 // extractListings extracts listing data using JavaScript evaluation
 func (scrape *Scraper) extractListings(ctx context.Context) ([]models.RawListing, error) {
 	// JavaScript code to extract all listing data
