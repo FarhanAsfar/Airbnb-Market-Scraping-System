@@ -81,7 +81,7 @@ cd airbnb-scraper
 
 ```bash
 # Initialize Go modules (if not already done)
-go mod download
+go mod tidy
 
 # This will download:
 # - chromedp (browser automation)
@@ -127,7 +127,7 @@ Create a config.yaml file inside the config folder.
 ```bash
 touch config/config.yaml
 ```
-> !! For the assignment purpose I've pushed the file so that it would be less hassle to review the project. So, there is no need to create the file. Although this file doesn't contain any sensitive information, it is not the best practice.
+> !! For the assignment checking purpose, I've pushed the file so that it would be less hassle to review the project. So, there is no need to create the file. Although this file doesn't contain any sensitive information, it is still not the best practice.
 
 **Key settings to review:**
 
@@ -155,11 +155,33 @@ database:
 # Run a quick test
 go run main.go --show-stats
 
-# If database is empty, it should show:
+# If the database is empty, it should show:
 # Total listings: 0
 
 # If you see this without errors, installation is successful! ✅
 ```
+
+### Step 7: Start Scraping:
+
+```bash
+go run main.go
+```
+
+**If you face any error like the following**
+```
+25023:25023:0220/005324.205998:ERROR:ui/gtk/gtk_ui.cc:251] Schema org.gnome.desktop.interface does not have key font-antialiasing
+qt.qpa.plugin: Could not find the Qt platform plugin "wayland" in ""
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+Available platform plugins are: eglfs, linuxfb, minimal, minimalegl, offscreen, vnc, xcb.
+exit status 1
+```
+**Install the following libraries and then run the project again**
+```bash
+sudo apt-get install -y chromium-browser libnss3 libgtk-3-0t64 libgbm1
+```
+
+**OR, you can set `headless = true` in the *config.yaml* file and run the project. In that case, you will not see the Chrome browser pop-up managed by the scraper.**
+
 ---
 
 ## ⚙️ Configuration
@@ -211,7 +233,7 @@ go run main.go
 ```
 
 **This will:**
-1. Visit Airbnb homepage
+1. Visit the Airbnb homepage
 2. Extract all visible location cards
 3. For each location:
    - Scrape page 1 (first 5 properties)
@@ -221,7 +243,7 @@ go run main.go
 6. Export to CSV file (`listings.csv`)
 7. Display analytics summary
 
-**Expected runtime**: 5-15 minutes (depends on number of locations and delays)
+**Expected runtime**: 5-15 minutes (depends on the number of locations and delays)
 
 ### Headless Mode (No Browser Window)
 
@@ -401,7 +423,7 @@ If URL new: INSERT new record
 4. **Reduce workers**: Set `max_workers: 2`
 5. **Use VPN or different network** if persistent
 
-### Issue: "Failed to connect to database"
+### Issue: "Failed to connect to database."
 
 **Solutions**:
 ```bash
@@ -493,5 +515,6 @@ browserCtx, cancel = context.WithTimeout(browserCtx, 90*time.Second)
 ---
 
 Remember: Use responsibly and ethically. This tool is for educational and personal use only.
+
 
 
