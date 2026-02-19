@@ -3,13 +3,13 @@ scraper:
   base_url: "https://www.airbnb.com"
   
   # Maximum pages to scrape 
-  max_pages: 1
+  max_pages: 2
   
   # Number of concurrent workers for detail page scraping
   max_workers: 3
 
   # Properties to scrape per location
-  properties_per_page: 1
+  properties_per_page: 5
   
   # Random delay range (milliseconds) 
   delay_min_ms: 3000  # 3 seconds minimum
