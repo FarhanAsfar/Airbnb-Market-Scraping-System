@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 
@@ -15,15 +16,23 @@ import (
 )
 
 func main() {
+	// Define CLI flags
+	showStats := flag.Bool("show-stats", false, "Show all analytics statistics")
+	avgPrice := flag.Bool("avg-price", false, "Show average price")
+	maxPrice := flag.Bool("max-price", false, "Show maximum price and property details")
+	topRated := flag.Bool("top-rated", false, "Show top 5 highest rated properties")
+	byLocation := flag.Bool("by-location", false, "Show listings grouped by location")
+	exportCSV := flag.Bool("export-csv", false, "Export listings to CSV file")
+
+	flag.Parse()
+
 	logger := utils.NewLogger()
-	logger.Info("Starting Airbnb Multi-Location Scraper...")
 
 	// Load configuration
 	cfg, err := config.Load("config/config.yaml")
 	if err != nil {
 		log.Fatal("Failed to load config:", err)
 	}
-	logger.Success("Configuration loaded")
 
 	// Connect to database
 	db, err := storage.NewDB(cfg.Database.GetDSN())
@@ -33,7 +42,65 @@ func main() {
 	defer db.Close()
 
 	// Create services
+	analyticsService := services.NewAnalyticsService(db, logger)
+	csvService := services.NewCSVService(db, logger)
+
+	// Handle analytics flags (no scraping needed)
+	if *showStats {
+		analytics, err := analyticsService.GetAnalytics()
+		if err != nil {
+			log.Fatal("Failed to get analytics:", err)
+		}
+		analyticsService.PrintAnalytics(analytics)
+		return
+	}
+
+	if *avgPrice {
+		if err := analyticsService.PrintAveragePrice(); err != nil {
+			log.Fatal("Failed to get average price:", err)
+		}
+		return
+	}
+
+	if *maxPrice {
+		if err := analyticsService.PrintMaxPrice(); err != nil {
+			log.Fatal("Failed to get max price:", err)
+		}
+		return
+	}
+
+	if *topRated {
+		if err := analyticsService.PrintTopRated(); err != nil {
+			log.Fatal("Failed to get top rated:", err)
+		}
+		return
+	}
+
+	if *byLocation {
+		if err := analyticsService.PrintByLocation(); err != nil {
+			log.Fatal("Failed to get by location:", err)
+		}
+		return
+	}
+
+	if *exportCSV {
+		if err := csvService.ExportToCSV(cfg.Output.CSVFile); err != nil {
+			log.Fatal("Failed to export CSV:", err)
+		}
+		return
+	}
+
+	// No flags = run scraping (default behavior)
+	runScraping(cfg, db, logger)
+}
+
+func runScraping(cfg *config.Config, db *storage.DB, logger *utils.Logger) {
+	logger.Info("Starting Airbnb Multi-Location Scraper...")
+
+	// Create services
 	listingService := services.NewListingService(db, logger)
+	csvService := services.NewCSVService(db, logger)
+	analyticsService := services.NewAnalyticsService(db, logger)
 	scraper := airbnb.NewScraper(&cfg.Scraper, logger)
 	ctx := context.Background()
 
@@ -62,7 +129,6 @@ func main() {
 
 	for i, location := range locations {
 		logger.Info("\n[%d/%d] Scraping: %s", i+1, len(locations), location.Name)
-		logger.Info("URL: %s", location.URL)
 
 		// Scrape this location (2 pages × 5 properties = 10 per location)
 		rawListings, err := scraper.ScrapeListings(ctx, location.URL)
@@ -89,14 +155,18 @@ func main() {
 		return
 	}
 
-	// Print summary by location if JSON console enabled
+	// Print preview if JSON console enabled
 	if cfg.Output.JSONConsole {
-		logger.Info("\n=== RAW LISTINGS SUMMARY ===")
-		jsonData, _ := json.MarshalIndent(allRawListings, "", "  ")
+		logger.Info("\n=== PREVIEW (first 2 listings) ===")
+		preview := allRawListings
+		if len(preview) > 2 {
+			preview = preview[:2]
+		}
+		jsonData, _ := json.MarshalIndent(preview, "", "  ")
 		fmt.Println(string(jsonData))
 	}
 
-	// Step 3: Scrape detail pages for bedrooms/bathrooms/guests
+	// Step 3: Scrape detail pages
 	logger.Info("\n=== STEP 3: SCRAPING DETAIL PAGES ===")
 	urls := make([]string, 0, len(allRawListings))
 	for _, listing := range allRawListings {
@@ -126,11 +196,27 @@ func main() {
 		logger.Error("Failed to save listings: %v", err)
 	}
 
+	// Step 5: Export to CSV
+	logger.Info("\n=== STEP 5: EXPORTING TO CSV ===")
+	if err := csvService.ExportToCSV(cfg.Output.CSVFile); err != nil {
+		logger.Error("Failed to export CSV: %v", err)
+	}
+
+	// Step 6: Show analytics
+	logger.Info("\n=== STEP 6: ANALYTICS SUMMARY ===")
+	analytics, err := analyticsService.GetAnalytics()
+	if err != nil {
+		logger.Error("Failed to calculate analytics: %v", err)
+	} else {
+		analyticsService.PrintAnalytics(analytics)
+	}
+
 	// Final summary
 	logger.Success("\n=== SCRAPING COMPLETE ===")
 	logger.Info("Locations scraped: %d", len(locations))
 	logger.Info("Total properties found: %d", totalProperties)
 	logger.Info("Successfully saved: %d", savedCount)
-	logger.Info("Duplicates/errors: %d", totalProperties-savedCount)
-	logger.Info("\nAverage properties per location: %.1f", float64(totalProperties)/float64(len(locations)))
+	logger.Info("CSV file: %s", cfg.Output.CSVFile)
+	logger.Info("\n💡 Tip: Run with --show-stats to see analytics anytime!")
+	logger.Info("   Other flags: --avg-price, --max-price, --top-rated, --by-location, --export-csv")
 }
