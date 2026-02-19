@@ -174,10 +174,7 @@ go run main.go --show-stats
 - Database name: `airbnb_scraper`
 - Port: `5432`
 
-**Using existing PostgreSQL**:
-1. Create a database: `CREATE DATABASE airbnb_scraper;`
-2. Update `config/config.yaml` with your credentials
-3. Ensure PostgreSQL is accessible on the configured port
+---
 
 ### Scraper Configuration
 
@@ -207,8 +204,6 @@ max_retries: 5
 ```
 
 ---
-
-## 📖 Usage
 
 ### Full Scraping Workflow
 
@@ -249,7 +244,7 @@ go run main.go
 # Useful for debugging or understanding the process
 ```
 
-## 🎯 CLI Commands
+##  CLI Commands
 
 ### Analytics Commands (No Scraping)
 
@@ -341,7 +336,7 @@ airbnb-market-scraping-system/
 └── README.md                 # This file
 ```
 
-## 🔧 How It Works
+##  How It Works
 
 ### 1. Homepage Location Discovery
 
@@ -499,6 +494,5 @@ browserCtx, cancel = context.WithTimeout(browserCtx, 90*time.Second)
 
 ---
 
-**Happy Scraping! 🚀**
-
 Remember: Use responsibly and ethically. This tool is for educational and personal use only.
+
