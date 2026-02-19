@@ -150,11 +150,6 @@ func (scrape *Scraper) ScrapeListings(ctx context.Context) ([]models.RawListing,
 		}
 
 	}
-
-	if err != nil {
-		return nil, fmt.Errorf("scraping failed: %w", err)
-	}
-
 	scrape.logger.Success("Scraped %d listings from page", len(allListings))
 	return allListings, nil
 }
